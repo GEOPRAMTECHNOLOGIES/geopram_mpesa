@@ -28,7 +28,8 @@ const waitForResult = async (checkoutRequestId) => {
     }
 
     if (status.status === 'FAILED') {
-      showStatus(`Payment failed: ${status.resultDesc || 'Check your M-Pesa response.'}`, 'fail');
+      const codeText = status.resultCode != null ? ` (ResultCode: ${status.resultCode})` : '';
+      showStatus(`Payment failed${codeText}: ${status.resultDesc || 'Check your M-Pesa response.'}`, 'fail');
       return;
     }
   }

@@ -96,11 +96,35 @@ logoutButton.addEventListener('click', () => {
 });
 
 loadButton.addEventListener('click', () => fetchTransactions());
-exportButton.addEventListener('click', () => {
-  const params = new URLSearchParams();
-  if (filterStatus.value) params.append('status', filterStatus.value);
-  if (searchInput.value.trim()) params.append('search', searchInput.value.trim());
-  window.location.href = `/api/admin/export?format=csv&${params.toString()}`;
+
+const downloadCsv = async (url, filename) => {
+  const response = await fetch(url, { headers: authHeaders() });
+  if (response.status === 401) return handleAuthError();
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Export failed.');
+  }
+
+  const blob = await response.blob();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+};
+
+exportButton.addEventListener('click', async () => {
+  try {
+    const params = new URLSearchParams();
+    if (filterStatus.value) params.append('status', filterStatus.value);
+    if (searchInput.value.trim()) params.append('search', searchInput.value.trim());
+    const exportUrl = `/api/admin/export?format=csv&${params.toString()}`;
+    await downloadCsv(exportUrl, 'geopram_transactions.csv');
+  } catch (error) {
+    dashboardMessage.textContent = error.message;
+  }
 });
 
 if (getToken()) {

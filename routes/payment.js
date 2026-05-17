@@ -104,6 +104,7 @@ router.post('/initiate', async (req, res) => {
 router.post('/callback', async (req, res) => {
   try {
     const callbackData = req.body;
+    console.log('Daraja callback received:', JSON.stringify(callbackData, null, 2));
     const stkCallback = callbackData?.Body?.stkCallback;
 
     if (!stkCallback) {
