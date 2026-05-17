@@ -134,10 +134,47 @@ router.post('/callback', async (req, res) => {
     transaction.callbackReceivedAt = callbackReceivedAt;
     await transaction.save();
 
-    res.json({ message: 'Callback received successfully.' });
+    // Acknowledge receipt in Daraja format
+    res.status(200).json({ ResultCode: 0, ResultDesc: 'Success' });
   } catch (error) {
     console.error('Callback processing error:', error.message || error);
     res.status(500).json({ message: 'Failed to process callback.' });
+  }
+});
+
+// Simulate Daraja callback for local testing without ngrok or production keys
+router.post('/simulate-callback', async (req, res) => {
+  try {
+    const {
+      checkoutRequestId,
+      resultCode = 0,
+      resultDesc = 'The payment was successful',
+      amount = null,
+      mpesaReceipt = null,
+      phone = null,
+    } = req.body;
+
+    if (!checkoutRequestId) {
+      return res.status(400).json({ message: 'checkoutRequestId is required to simulate callback.' });
+    }
+
+    const transaction = await Transaction.findOne({ checkoutRequestId });
+    if (!transaction) return res.status(404).json({ message: 'Transaction not found.' });
+
+    transaction.status = resultCode === 0 ? 'SUCCESS' : 'FAILED';
+    transaction.resultCode = resultCode;
+    transaction.resultDesc = resultDesc;
+    if (amount) transaction.amount = amount;
+    if (mpesaReceipt) transaction.receiptNumber = mpesaReceipt;
+    if (phone) transaction.phone = phone;
+    transaction.callbackReceivedAt = new Date();
+    await transaction.save();
+
+    // Return Daraja-style acknowledgement
+    return res.status(200).json({ ResultCode: 0, ResultDesc: 'Success' });
+  } catch (err) {
+    console.error('Simulate callback error:', err);
+    return res.status(500).json({ message: 'Failed to simulate callback.' });
   }
 });
 

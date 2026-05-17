@@ -37,6 +37,7 @@ This repository contains a Node.js backend and browser client for GEOPRAM Servic
 
 - `POST /api/payments/initiate` — initiate STK Push
 - `POST /api/payments/callback` — receive Daraja callback
+- `POST /api/payments/simulate-callback` — simulate a Daraja callback for local testing (no ngrok required)
 - `GET /api/payments/status/:checkoutRequestId` — get current payment status
 - `POST /api/admin/login` — authenticate admin
 - `GET /api/admin/transactions` — list admin transactions
