@@ -41,5 +41,10 @@ const start = async () => {
     process.exit(1);
   }
 };
+// Only load dotenv if not running in production/Vercel
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
 
 start();
