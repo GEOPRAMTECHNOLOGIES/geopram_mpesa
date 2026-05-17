@@ -95,6 +95,8 @@ logoutButton.addEventListener('click', () => {
   showLogin();
 });
 
+loadButton.addEventListener('click', () => fetchTransactions());
+
 const downloadCsv = async (url, filename) => {
   const response = await fetch(url, { headers: authHeaders() });
   if (response.status === 401) return handleAuthError();
@@ -113,7 +115,6 @@ const downloadCsv = async (url, filename) => {
   URL.revokeObjectURL(link.href);
 };
 
-loadButton.addEventListener('click', () => fetchTransactions());
 exportButton.addEventListener('click', async () => {
   try {
     const params = new URLSearchParams();
