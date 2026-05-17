@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "routes": [
+    { "src": "/api/payments/initiate", "dest": "/api/payments/initiate.js" },
+    { "src": "/api/payments/callback", "dest": "/api/payments/callback.js" },
+    { "src": "/api/payments/status/([^/]+)", "dest": "/api/payments/status.js?checkoutRequestId=$1" },
+    { "src": "/api/admin/login", "dest": "/api/admin/login.js" },
+    { "src": "/api/admin/transactions", "dest": "/api/admin/transactions.js" },
+    { "src": "/api/admin/summary", "dest": "/api/admin/summary.js" },
+    { "src": "/api/admin/export", "dest": "/api/admin/export.js" },
+    { "src": "/api/admin/stk-push", "dest": "/api/admin/stk-push.js" },
+    { "src": "/admin", "dest": "/public/admin.html" },
+    { "src": "/admin.js", "dest": "/public/admin.js" },
+    { "src": "/payment.js", "dest": "/public/payment.js" },
+    { "src": "/", "dest": "/public/index.html" }
+  ]
+}

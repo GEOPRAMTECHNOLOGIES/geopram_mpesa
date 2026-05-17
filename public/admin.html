@@ -5,67 +5,191 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GEOPRAM Admin Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #eff2f7; color: #1f2937; margin: 0; padding: 24px; }
-    .container { max-width: 1040px; margin: auto; background: #fff; padding: 24px; border-radius: 16px; box-shadow: 0 12px 32px rgba(15,23,42,.08); }
-    h1, h2 { margin-top: 0; }
-    label { display: block; margin: 12px 0 6px; font-weight: 600; }
-    input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; }
-    button { margin-top: 14px; padding: 12px 18px; border: none; background: #0f766e; color: white; border-radius: 10px; cursor: pointer; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #eff2f7; color: #1f2937; margin: 0; padding: 24px 16px; }
+    .container { max-width: 1080px; margin: auto; }
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 6px 24px rgba(15,23,42,.07);
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    h1 { font-size: 1.5rem; color: #0f766e; }
+    h2 { font-size: 1.1rem; }
+    label { display: block; margin: 10px 0 4px; font-weight: 600; font-size: 0.9rem; }
+    input, select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    input:focus, select:focus { outline: none; border-color: #0f766e; }
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      background: #0f766e;
+      color: #fff;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background .15s;
+    }
+    button:hover { background: #0d6460; }
     button.secondary { background: #334155; }
-    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-    .card { border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; background: #f8fafc; }
-    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
-    th { background: #f1f5f9; }
-    .status-success { color: #166534; font-weight: 700; }
-    .status-failed { color: #b91c1c; font-weight: 700; }
-    .login-box { max-width: 420px; margin: auto; }
+    button.secondary:hover { background: #1e293b; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 8px; }
+    .summary-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      background: #f8fafc;
+    }
+    .summary-card .num { font-size: 2rem; font-weight: 700; }
+    .summary-card .lbl { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+    .num.green { color: #166534; }
+    .num.red   { color: #b91c1c; }
+    .num.gray  { color: #475569; }
+    .filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filters > div { flex: 1; min-width: 180px; }
+    .filters > div.narrow { flex: 0 0 160px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { background: #f1f5f9; text-align: left; padding: 10px 12px; font-size: 0.82rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+    tr:hover td { background: #f8fafc; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+    .badge-SUCCESS { background: #dcfce7; color: #166534; }
+    .badge-FAILED  { background: #fee2e2; color: #b91c1c; }
+    .badge-PENDING { background: #fef9c3; color: #854d0e; }
+    .msg { margin-top: 10px; font-size: 0.9rem; color: #1d4ed8; }
+    .msg.err { color: #b91c1c; }
     .hidden { display: none; }
+
+    /* Login */
+    .login-wrap { max-width: 420px; margin: 60px auto; }
+    .login-wrap .card { padding: 36px 32px; }
+
+    /* STK Push panel */
+    .stk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .stk-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div id="login-screen" class="login-box">
-      <h1>Admin Login</h1>
-      <form id="login-form">
+
+  <!-- LOGIN -->
+  <div id="login-wrap" class="login-wrap">
+    <div class="card">
+      <h1>GEOPRAM Admin</h1>
+      <form id="login-form" novalidate>
         <label for="username">Username</label>
-        <input type="text" id="username" name="username" required />
+        <input type="text" id="username" name="username" required autocomplete="username" />
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required />
-        <button type="submit">Sign In</button>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+        <div class="btn-row" style="margin-top:18px;">
+          <button type="submit" style="width:100%;">Sign In</button>
+        </div>
       </form>
-      <div id="login-message" style="margin-top: 14px; color: #b91c1c;"></div>
-    </div>
-
-    <div id="dashboard" class="hidden">
-      <h1>GEOPRAM M-Pesa Dashboard</h1>
-      <div class="grid">
-        <div class="card"><h2>Summary</h2><p id="summary"></p></div>
-        <div class="card"><h2>Actions</h2><button id="logout">Logout</button> <button id="export-csv" class="secondary">Export CSV</button></div>
-      </div>
-
-      <div style="margin-top: 24px; display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;">
-        <div style="flex:1; min-width:240px;"><label>Search</label><input type="text" id="search" placeholder="Name, email or phone" /></div>
-        <div style="width:180px;"><label>Status</label><select id="filter-status"><option value="">All</option><option value="SUCCESS">Success</option><option value="FAILED">Failed</option><option value="PENDING">Pending</option></select></div>
-        <div><button id="load-transactions">Load Records</button></div>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Customer</th>
-            <th>Phone</th>
-            <th>Amount</th>
-            <th>Receipt</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody id="transaction-table"></tbody>
-      </table>
-      <div id="dashboard-message" style="margin-top:16px;color:#1d4ed8;"></div>
+      <div id="login-msg" class="msg err" style="display:none;"></div>
     </div>
   </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="container hidden">
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <h1 style="margin:0;">GEOPRAM M-Pesa Dashboard</h1>
+      <div class="btn-row">
+        <button id="btn-export" class="secondary">⬇ Export CSV</button>
+        <button id="btn-logout" class="danger">Logout</button>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="card">
+      <h2>Transaction Summary</h2>
+      <div class="summary-grid">
+        <div class="summary-card"><div id="sum-success" class="num green">—</div><div class="lbl">Successful</div></div>
+        <div class="summary-card"><div id="sum-failed"  class="num red">—</div><div class="lbl">Failed</div></div>
+        <div class="summary-card"><div id="sum-pending" class="num gray">—</div><div class="lbl">Pending</div></div>
+      </div>
+    </div>
+
+    <!-- Admin STK Push -->
+    <div class="card">
+      <h2>Send STK Push</h2>
+      <form id="stk-form" novalidate>
+        <div class="stk-grid">
+          <div>
+            <label for="stk-phone">Phone (254XXXXXXXXX)</label>
+            <input type="tel" id="stk-phone" placeholder="0712345678" required />
+          </div>
+          <div>
+            <label for="stk-amount">Amount (KES)</label>
+            <input type="number" id="stk-amount" min="1" step="1" placeholder="100" required />
+          </div>
+          <div>
+            <label for="stk-ref">Account Reference</label>
+            <input type="text" id="stk-ref" value="GEOPRAM" />
+          </div>
+          <div>
+            <label for="stk-desc">Transaction Description</label>
+            <input type="text" id="stk-desc" value="Payment for services" />
+          </div>
+        </div>
+        <div class="btn-row" style="margin-top:14px;">
+          <button type="submit">Send STK Push</button>
+        </div>
+      </form>
+      <div id="stk-msg" class="msg" style="display:none;"></div>
+    </div>
+
+    <!-- Transactions -->
+    <div class="card">
+      <h2>Transactions</h2>
+      <div class="filters">
+        <div>
+          <label>Search</label>
+          <input type="text" id="search" placeholder="Name, email or phone" />
+        </div>
+        <div class="narrow">
+          <label>Status</label>
+          <select id="filter-status">
+            <option value="">All</option>
+            <option value="SUCCESS">Success</option>
+            <option value="FAILED">Failed</option>
+            <option value="PENDING">Pending</option>
+          </select>
+        </div>
+        <div style="flex:0 0 auto; padding-top:22px;">
+          <button id="btn-load">Load Records</button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto; margin-top:16px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Amount</th>
+              <th>Receipt</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="tx-table"></tbody>
+        </table>
+      </div>
+      <div id="tx-msg" class="msg"></div>
+    </div>
+  </div>
+
   <script src="/admin.js"></script>
 </body>
 </html>

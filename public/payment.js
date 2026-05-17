@@ -1,72 +1,79 @@
-const form = document.getElementById('payment-form');
-const statusEl = document.getElementById('status');
+/* public/payment.js */
+const form      = document.getElementById('payment-form');
+const payBtn    = document.getElementById('pay-btn');
+const statusBox = document.getElementById('status-box');
 
-const showStatus = (message, variant = 'info') => {
-  statusEl.style.display = 'block';
-  statusEl.textContent = message;
-  statusEl.className = `status ${variant}`;
-};
+function showStatus(html, variant) {
+  statusBox.style.display = 'block';
+  statusBox.innerHTML     = html;
+  statusBox.className     = `status-box status-${variant}`;
+}
 
-const checkStatus = async (checkoutRequestId) => {
-  const response = await fetch(`/api/payments/status/${checkoutRequestId}`);
-  if (!response.ok) {
-    throw new Error('Could not load transaction status.');
-  }
-  return response.json();
-};
+async function pollStatus(checkoutRequestId) {
+  showStatus('<span class="spinner"></span>Waiting for M-Pesa confirmation… Please enter your PIN.', 'info');
 
-const waitForResult = async (checkoutRequestId) => {
-  showStatus('Waiting for M-Pesa confirmation... Please enter your PIN on your phone.', 'info');
+  for (let i = 0; i < 20; i++) {
+    await new Promise((r) => setTimeout(r, 3000));
 
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    const status = await checkStatus(checkoutRequestId);
+    let data;
+    try {
+      const res = await fetch(`/api/payments/status/${encodeURIComponent(checkoutRequestId)}`);
+      data = await res.json();
+    } catch {
+      continue;
+    }
 
-    if (status.status === 'SUCCESS') {
-      showStatus(`Payment to GEOPRAM Services was successful! Thank you. Transaction ID: ${status.checkoutRequestId}. Amount: KES ${status.amount}. Phone: ${status.phone}. Timestamp: ${new Date(status.callbackReceivedAt || status.createdAt).toLocaleString()}.`, 'success');
+    if (data.status === 'SUCCESS') {
+      const ts = data.callbackReceivedAt || data.createdAt;
+      showStatus(
+        `✅ <strong>Payment successful!</strong><br>` +
+        `Receipt: <strong>${data.receiptNumber || checkoutRequestId}</strong><br>` +
+        `Amount: KES ${data.amount} · Phone: ${data.phone}<br>` +
+        `${ts ? new Date(ts).toLocaleString() : ''}`,
+        'success'
+      );
       return;
     }
 
-    if (status.status === 'FAILED') {
-      const codeText = status.resultCode != null ? ` (ResultCode: ${status.resultCode})` : '';
-      showStatus(`Payment failed${codeText}: ${status.resultDesc || 'Check your M-Pesa response.'}`, 'fail');
+    if (data.status === 'FAILED') {
+      const code = data.resultCode != null ? ` (code ${data.resultCode})` : '';
+      showStatus(`❌ Payment failed${code}: ${data.resultDesc || 'Check your M-Pesa.'}`, 'fail');
       return;
     }
   }
 
-  showStatus('Still waiting for confirmation. Please check your M-Pesa app or try again in a few moments.', 'info');
-};
+  showStatus('Still waiting… Check your M-Pesa app or try again shortly.', 'info');
+}
 
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
   const fullName = form.fullName.value.trim();
-  const email = form.email.value.trim();
-  const phone = form.phone.value.trim();
-  const amount = form.amount.value.trim();
+  const email    = form.email.value.trim();
+  const phone    = form.phone.value.trim();
+  const amount   = form.amount.value.trim();
 
   if (!fullName || !email || !phone || !amount) {
     return showStatus('All fields are required.', 'fail');
   }
 
-  form.querySelector('button').disabled = true;
-  showStatus('Sending payment request to Safaricom...', 'info');
+  payBtn.disabled = true;
+  showStatus('<span class="spinner"></span>Sending request to Safaricom…', 'info');
 
   try {
-    const response = await fetch('/api/payments/initiate', {
-      method: 'POST',
+    const res  = await fetch('/api/payments/initiate', {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fullName, email, phone, amount }),
+      body:    JSON.stringify({ fullName, email, phone, amount }),
     });
+    const data = await res.json();
 
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.message || 'Could not start payment');
-    }
+    if (!res.ok) throw new Error(data.message || 'Could not start payment.');
 
-    await waitForResult(result.checkoutRequestId);
+    await pollStatus(data.checkoutRequestId);
   } catch (err) {
-    showStatus(err.message, 'fail');
+    showStatus(`❌ ${err.message}`, 'fail');
   } finally {
-    form.querySelector('button').disabled = false;
+    payBtn.disabled = false;
   }
 });
